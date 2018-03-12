@@ -1,0 +1,98 @@
+#!/bin/bash
+
+list=$1
+threads=6
+#threadsX2=$((${threads}*2))
+
+adni=/ifs/scratch/pimri/posnerlab/1anal/adni
+
+CMD_batch=/ifs/scratch/pimri/posnerlab/1anal/adni/adni_on_c2b2/job/cmd1.batch.trac.${list}
+rm -rf $CMD_batch
+
+for s in `cat /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/\$list`
+do
+#s=`echo $SUBJECT | egrep -o '[0-9]{8}'`
+CMD=/ifs/scratch/pimri/posnerlab/1anal/adni/adni_on_c2b2/job/cmd1.trac.${s}
+rm -rf $CMD
+SUBJECT=${s}_1mm_flair
+echo ${SUBJECT}
+
+cat<<EOC >$CMD
+#!/bin/bash
+source ~/.bashrc
+workingdir=/ifs/scratch/pimri/posnerlab/1anal/adni/fs/${SUBJECT}/dmri2
+echo $workingdir
+mkdir $workingdir
+if [ ! -e \$workingdir ]; then mkdir \$workingdir; fi
+cd \$workingdir
+pwd
+#%% 1. setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.nii.gz ./dti.nii.gz
+cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.bvec ./dti.bvec
+cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.bval ./dti.bval
+cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.bvec_tp ./dti.bvec_tp
+cp /ifs/scratch/pimri/posnerlab/1anal/adni/data/nii/${s}_*DTI.bval_tp ./dti.bval_tp
+#%% 2. DWI processing2-converting nifti to mif%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if [ ! -e mr_fod.mif.gz ];then
+    mrconvert dti.nii.gz -force mr_dwi.mif.gz -fslgrad dti.bvec dti.bval -datatype float32 -stride 0,0,0,1 -nthreads $threads
+fi
+#%% 3. denoising
+if [ ! -e mr_dwi_denoised.mif.gz ];then
+    dwidenoise mr_dwi.mif.gz -force mr_dwi_denoised.mif.gz -nthreads $threads
+fi
+#%% 4. dwipreproc -eddy current
+if [ ! -e mr_dwi_denoised_preproc.mif.gz ];then
+    dwipreproc -rpe_none -pe_dir PA mr_dwi_denoised.mif.gz -force mr_dwi_denoised_preproc.mif.gz -rpe_none -nthreads $threads
+fi
+#%% 5. mask and bias field correction
+if [ ! -e mr_eroded_mask.mif.gz ]; then
+     dwi2mask mr_dwi_denoised_preproc.mif.gz - | maskfilter - erode -npass 7 -force mr_eroded_mask.mif.gz -nthreads $threads
+fi
+#%% 6. bias field correction
+if [ ! -e mr_dwi_denoised_preproc_biasCorr.mif.gz ]; then
+     dwibiascorrect mr_dwi_denoised_preproc.mif.gz -force mr_dwi_denoised_preproc_biasCorr.mif.gz -ants -mask mr_eroded_mask.mif.gz -fslgrad dti.bvec dti.bval -nthreads $threads
+fi
+#%% 7. generating b0 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if [ ! -e mr_meanb0.mif.gz ];then
+     dwiextract mr_dwi_denoised_preproc_biasCorr.mif.gz - -bzero -nthreads $threads | mrmath - mean -force mr_meanb0.mif.gz -axis 3 -nthreads $threads
+fi
+#%% 8. upsampling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for im in mr_dwi_denoised_preproc_biasCorr mr_eroded_mask mr_meanb0;
+do 
+     if [ ! -e \${im}_upsample.mif.gz ];then
+     mrresize \${im}.mif.gz -scale 2.0 -force \${im}_upsample.mif.gz -nthreads $threads
+     fi
+done
+#%% 9. dwi2response-subject level %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if [ ! -e response_wm.txt ]; then
+    dwi2response dhollander -mask mr_eroded_mask.mif.gz -voxels mr_voxels_eroded.mif.gz mr_dwi_denoised_preproc_biasCorr.mif.gz response_wm.txt response_gm.txt response_csf.txt -force -nthreads $threads
+fi
+#%% FOD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#% make sure to use "DILATED MASK" for FOD generation
+if [ ! -e mr_dilate_mask.mif.gz ];then
+    dwi2mask mr_dwi_denoised_preproc_biasCorr.mif.gz - | maskfilter - dilate -npass 5 -force mr_dilate_mask.mif.gz -nthreads $threads
+fi
+if [ ! -e WM_FODs.mif.gz ];then
+   dwi2fod msmt_csd mr_dwi_denoised_preproc_biasCorr.mif.gz response_wm.txt WM_FODs.mif.gz response_gm.txt gm.mif.gz response_csf.txt csf.mif.gz -mask mr_dilate_mask.mif.gz -force -nthreads $threads
+fi
+if [ ! -e tissueRGB.mif.gz ]; then
+   mrconvert WM_FODs.mif.gz - -coord 3 0 | mrcat csf.mif.gz gm.mif.gz - tissueRGB.mif.gz -axis 3
+fi
+mrconvert mr_dwi_denoised_preproc_biasCorr.mif.gz mr_dwi_denoised_preproc_biasCorr.nii.gz -nthreads $threads
+mrconvert mr_dilate_mask.mif.gz mr_dilate_mask.nii.gz -nthreads $threads
+dtifit -k mr_dwi_denoised_preproc_biasCorr.nii.gz -o dtifit -m mr_dilate_mask.nii.gz -r dti.bvec -b dti.bval -V
+echo "I THINK EVERYTHING IS DONE BY NOW"
+EOC
+
+
+chmod +x $CMD
+echo $CMD>>$CMD_batch
+
+
+done
+
+### batch submission
+
+echo $CMD_batch
+$code/fsl_sub_hpc_2 -s smp,$threads -l /ifs/scratch/pimri/posnerlab/1anal/adni/adni_on_c2b2/job -t $CMD_batch
+#$code/fsl_sub_hpc_6 -l /ifs/scratch/pimri/posnerlab/1anal/adni/adni_on_c2b2/job -t $CMD_batch
