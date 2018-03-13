@@ -14,7 +14,7 @@ do
 #s=`echo $SUBJECT | egrep -o '[0-9]{8}'`
 CMD=/ifs/scratch/pimri/posnerlab/1anal/FTO/code_fto_c2b2/job/cmd1.trac.${s}
 rm -rf $CMD
-datafolder=/ifs/scratch/pimri/posnerlab/1anal/FTO/data
+datafolder=/ifs/scratch/pimri/posnerlab/1anal/FTO/rawdata
 SUBJECT=${s}
 echo ${SUBJECT}
 
@@ -40,7 +40,10 @@ cp /ifs/scratch/pimri/posnerlab/1anal/FTO/data/slspec_fto.txt ./
 echo current folder is \`pwd\`
 ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$threads
 #%% 1. setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-cp -f $datafolder/${s}_mr_dwi.mif.gz mr_dwi.mif.gz
+#cp -f $datafolder/${s}_mr_dwi.mif.gz mr_dwi.mif.gz
+echo mrconvert
+time mrconvert $datafolder/${s}_mr_dwi.nii.gz -force mr_dwi.mif.gz -fslgrad $datafolder/bvec $datafolder/bval \
+            -datatype float32 -stride 0,0,0,1 -nthreads ${threads}
 
     echo dwidenoise
     time dwidenoise mr_dwi.mif.gz -force mr_dwi_denoised.mif.gz -nthreads ${threads} 
