@@ -65,53 +65,53 @@ sleep 0.1
 -nocleanup -force -cuda
  sleep 0.1
   
-  dwiextract mr_dwi_denoised_gibbs_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
-                -force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
-sleep 0.1
-cp -f mr_meanb0.mif.gz mr_meanb0_nonbiascorr.mif.gz 
-	mrconvert mr_meanb0_nonbiascorr.mif.gz mr_meanb0_nonbiascorr.nii.gz -force -quiet -nthreads ${threads}
-sleep 0.1
+#  dwiextract mr_dwi_denoised_gibbs_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
+#                -force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
+#sleep 0.1
+#cp -f mr_meanb0.mif.gz mr_meanb0_nonbiascorr.mif.gz 
+#	mrconvert mr_meanb0_nonbiascorr.mif.gz mr_meanb0_nonbiascorr.nii.gz -force -quiet -nthreads ${threads}
+#sleep 0.1
      #pigz --fast -b 1280 -f mr_meanb0_nonbiascorr.nii
-     bet2 mr_meanb0_nonbiascorr mr_meanb0_nonbiascorr_bet2 -m -f 0.1 -v
-sleep 0.1
+#     bet2 mr_meanb0_nonbiascorr mr_meanb0_nonbiascorr_bet2 -m -f 0.1 -v
+#sleep 0.1
      
-     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz mr_dwi_mask.mif.gz -force -nthreads ${threads} 
+#     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz mr_dwi_mask.mif.gz -force -nthreads ${threads} 
             #pigz --fast -b 1280 -f mr_dwi_mask.mif
-  sleep 0.1
+#  sleep 0.1
           
-     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz - -nthreads ${threads} -quiet | maskfilter - erode \
-     -npass 3 -force mr_eroded_mask.mif.gz -quiet -nthreads ${threads}
-sleep 0.1
+#     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz - -nthreads ${threads} -quiet | maskfilter - erode \
+#     -npass 3 -force mr_eroded_mask.mif.gz -quiet -nthreads ${threads}
+#sleep 0.1
             #pigz --fast -b 1280 -f mr_eroded_mask.mif
 #fi
 #%% 6. bias field correction (time: 0.5m)
 #if [ ! -e mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz ]; then
-     echo dwibiascorrect
-     time dwibiascorrect mr_dwi_denoised_gibbs_preproc.mif.gz -force mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz -ants \
-     -nthreads ${threads} -mask mr_meanb0_nonbiascorr_bet2_mask.nii.gz 
-sleep 0.1
+#     echo dwibiascorrect
+#     time dwibiascorrect mr_dwi_denoised_gibbs_preproc.mif.gz -force mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz -ants \
+#     -nthreads ${threads} -mask mr_meanb0_nonbiascorr_bet2_mask.nii.gz 
+#sleep 0.1
             #pigz --fast -b 1280 -f mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif
-     mrconvert mr_meanb0_nonbiascorr_bet2_mask.nii.gz mr_meanb0_nonbiascorr_bet2_mask.mif.gz -force -nthreads ${threads}
-sleep 0.1
+#     mrconvert mr_meanb0_nonbiascorr_bet2_mask.nii.gz mr_meanb0_nonbiascorr_bet2_mask.mif.gz -force -nthreads ${threads}
+#sleep 0.1
             #pigz --fast -b 1280 -f mr_meanb0_nonbiascorr_bet2_mask.mif
 #fi
 #%% 7. generating b0 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #if [ ! -e mr_meanb0.mif.gz ];then
-     dwiextract mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz - -bzero -quiet -nthreads ${threads} | mrmath - mean \
-     	-force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
-sleep 0.1
-     mrconvert mr_meanb0.mif.gz mr_meanb0.nii.gz -force -quiet -nthreads ${threads}
-  sleep 0.1
+#     dwiextract mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz - -bzero -quiet -nthreads ${threads} | mrmath - mean \
+#     	-force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
+#sleep 0.1
+#     mrconvert mr_meanb0.mif.gz mr_meanb0.nii.gz -force -quiet -nthreads ${threads}
+#  sleep 0.1
    
-     bet2 mr_meanb0 mr_meanb0_bet -m -f 0.2
-sleep 0.1
+#     bet2 mr_meanb0 mr_meanb0_bet -m -f 0.2
+#sleep 0.1
      
-     mrresize mr_meanb0_bet.nii.gz -voxel 1.25 mr_meanb0_bet_upsample125.nii.gz \
-     	-force -interp sinc -nthreads ${threads} -quiet
-sleep 0.1
-     mrresize mr_meanb0_bet_mask.nii.gz -voxel 1.25 mr_meanb0_bet_mask_upsample125.nii.gz \
-     	-force -interp sinc -nthreads ${threads} -quiet
-sleep 0.1
+#     mrresize mr_meanb0_bet.nii.gz -voxel 1.25 mr_meanb0_bet_upsample125.nii.gz \
+#     	-force -interp sinc -nthreads ${threads} -quiet
+#sleep 0.1
+#     mrresize mr_meanb0_bet_mask.nii.gz -voxel 1.25 mr_meanb0_bet_mask_upsample125.nii.gz \
+#     	-force -interp sinc -nthreads ${threads} -quiet
+#sleep 0.1
      
      #&& pigz --fast -b 1280 -f mr_meanb0.mif
 #fi
@@ -120,29 +120,29 @@ sleep 0.1
 #    dwi2mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif - -nthreads 256 
 #fi
 #%% 8. upsampling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for im in mr_dwi_denoised_gibbs_preproc_biasCorr mr_meanb0_nonbiascorr_bet2_mask mr_meanb0;
-do 
-     	mrresize \${im}.mif.gz -voxel 1.25 -force \${im}_upsample125.mif.gz -interp sinc -nthreads ${threads} -quiet
-sleep 0.1
-done
+#for im in mr_dwi_denoised_gibbs_preproc_biasCorr mr_meanb0_nonbiascorr_bet2_mask mr_meanb0;
+#do 
+#     	mrresize \${im}.mif.gz -voxel 1.25 -force \${im}_upsample125.mif.gz -interp sinc -nthreads ${threads} -quiet
+#sleep 0.1
+#done
 #% make sure to use "DILATED MASK" for FOD generation
 #if [ ! -e mr_dilate_mask.mif.gz ];then
-    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz - -quiet -nthreads ${threads} | maskfilter - dilate \
-    -npass 3 mr_dilate_mask_upsample125.mif.gz -force -quiet -nthreads ${threads} 
+#    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz - -quiet -nthreads ${threads} | maskfilter - dilate \
+#    -npass 3 mr_dilate_mask_upsample125.mif.gz -force -quiet -nthreads ${threads} 
             #&& pigz --fast -b 1280 -f mr_dilate_mask_upsample125.mif
-sleep 0.1
+#sleep 0.1
     
-    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz mr_mask_upsample125.mif.gz -nthreads ${threads} -force 
+#    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz mr_mask_upsample125.mif.gz -nthreads ${threads} -force 
             #pigz --fast -b 1280 -f mr_mask_upsample125.mif
-sleep 0.1
+#sleep 0.1
     
-    mrconvert mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz \
-            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.nii.gz -force -nthreads ${threads}
-sleep 0.1
+#    mrconvert mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz \
+#            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.nii.gz -force -nthreads ${threads}
+#sleep 0.1
     
-    bet2 mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125 \
-            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125_bet2 -m -f 0.2 -v
-sleep 0.1
+#    bet2 mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125 \
+#            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125_bet2 -m -f 0.2 -v
+#sleep 0.1
 #fi
 ##########################################################################################################################################
 ##################Preparation for 5TT using freesurfer APARC+ASEG ############################################################
