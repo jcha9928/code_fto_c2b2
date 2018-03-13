@@ -59,7 +59,7 @@ sleep 0.1
 -readout_time 0.18462 \
 -eddy_options " --repol --niter=8 --data_is_shelled --fwhm=10,8,4,2,0,0,0,0 --repol --out=eddy_corrected_data --mporder=6 --slspec=../slspec_fto.txt --s2v_niter=5 --s2v_lambda=1 --s2v_interp=trilinear " \
 -nthreads ${threads} \
--nocleanup -force 
+-nocleanup -force -cuda
  sleep 0.1
   
   dwiextract mr_dwi_denoised_gibbs_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
