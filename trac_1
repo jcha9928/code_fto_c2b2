@@ -14,7 +14,7 @@ do
 #s=`echo $SUBJECT | egrep -o '[0-9]{8}'`
 CMD=/ifs/scratch/pimri/posnerlab/1anal/FTO/code_fto_c2b2/job/cmd1.trac.${s}
 rm -rf $CMD
-datafolder = /ifs/scratch/pimri/posnerlab/1anal/FTO/DTIdata/${s}
+datafolder=/ifs/scratch/pimri/posnerlab/1anal/FTO/DTIdata/${s}
 SUBJECT=${s}
 echo ${SUBJECT}
 
