@@ -1,7 +1,7 @@
 #!/bin/bash
 
 list=$1
-threads=12
+threads=4
 #threadsX2=$((${threads}*2))
 
 #adni=/ifs/scratch/pimri/posnerlab/1anal/adni
@@ -21,7 +21,7 @@ echo ${SUBJECT}
 cat<<EOC >$CMD
 #!/bin/bash
 #$ -cwd -S /bin/bash -j y
-#$ -pe smp 6
+#$ -pe smp 2
 #$ -l mem=3G,time=3::
 #$ -l gpu=3
 #$ -M jc4248@c2b2.columbia.edu -m bes
