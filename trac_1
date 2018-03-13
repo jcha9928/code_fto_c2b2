@@ -206,7 +206,7 @@ EOC
 
 
 chmod +x $CMD
-echo qsub $CMD
+qsub $CMD
 done
 
 
