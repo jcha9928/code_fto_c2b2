@@ -204,7 +204,7 @@ EOC
 
 chmod +x $CMD
 echo qsub $CMD
-
+done
 
 
 ### batch submission
