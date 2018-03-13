@@ -21,17 +21,19 @@ echo ${SUBJECT}
 cat<<EOC >$CMD
 #!/bin/bash
 #$ -cwd -S /bin/bash -j y
-#$ -pe smp 3
-#$ -l mem=3G,time=12::
-#$ -l gpu=1
+#$ -pe smp 6
+#$ -l mem=3G,time=3::
+#$ -l gpu=3
 #$ -M jc4248@c2b2.columbia.edu -m bes
 
 #CUDA
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/apps/cuda/7.5.18/lib64
-export PATH=${PATH}:/nfs/apps/cuda/7.5.18/bin
+unset LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/apps/cuda/7.5.18/lib64
+#export PATH=${PATH}:/nfs/apps/cuda/7.5.18/bin
 export FSLGECUDAQ=gpu_1d.q
 
 source ~/.bashrc
+echo $LD_LIBRARY_PATH
 
 mkdir -p /tmp/${s}/
 cd /tmp/${s}
@@ -193,7 +195,7 @@ sleep 0.1
 ######################################################################################################################################
      
             
-done
+
 #### COPY ALL THE FILES TO SCRATCH ####
 #cp -rfv ../dwi /lus/theta-fs0/projects/AD_Brain_Imaging/anal/HBN/fs/${s}/
 #######################################################################
