@@ -21,8 +21,8 @@ echo ${SUBJECT}
 cat<<EOC >$CMD
 #!/bin/bash
 #$ -cwd -S /bin/bash -j y
-#$ -pe smp 6
-#$ -l mem=4G,time=24::
+#$ -pe smp 3
+#$ -l mem=3G,time=3::
 #$ -l gpu=3
 #$ -M jc4248@c2b2.columbia.edu -m bes
 
@@ -65,7 +65,7 @@ sleep 0.1
   dwiextract mr_dwi_denoised_gibbs_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
                 -force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
 sleep 0.1
-
+cp -f mr_meanb0.mif.gz mr_meanb0_nonbiascorr.mif.gz 
 	mrconvert mr_meanb0_nonbiascorr.mif.gz mr_meanb0_nonbiascorr.nii.gz -force -quiet -nthreads ${threads}
 sleep 0.1
      #pigz --fast -b 1280 -f mr_meanb0_nonbiascorr.nii
