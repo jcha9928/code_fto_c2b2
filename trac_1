@@ -53,7 +53,7 @@ time mrconvert $datafolder/${s}_rawdti.nii.gz -force mr_dwi.mif.gz -fslgrad $dat
     time mrdegibbs mr_dwi_denoised.mif.gz mr_dwi_denoised_gibbs.mif.gz -force -nthreads ${threads} 
 sleep 0.1
 
-	time dwipreproc mr_dwi_denoised_gibbs_crop.mif.gz mr_dwi_denoised_gibbs_crop_preproc.mif.gz \
+	time dwipreproc mr_dwi_denoised_gibbs.mif.gz mr_dwi_denoised_gibbs_preproc.mif.gz \
 -pe_dir AP \
 -rpe_none \
 -readout_time 0.18462 \
@@ -62,7 +62,7 @@ sleep 0.1
 -nocleanup -force 
  sleep 0.1
   
-  dwiextract mr_dwi_denoised_gibbs_crop_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
+  dwiextract mr_dwi_denoised_gibbs_preproc.mif.gz - -bzero -nthreads ${threads} | mrmath - mean \
                 -force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
 sleep 0.1
 
@@ -72,11 +72,11 @@ sleep 0.1
      bet2 mr_meanb0_nonbiascorr mr_meanb0_nonbiascorr_bet2 -m -f 0.1 -v
 sleep 0.1
      
-     dwi2mask mr_dwi_denoised_gibbs_crop_preproc.mif.gz mr_dwi_mask.mif.gz -force -nthreads ${threads} 
+     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz mr_dwi_mask.mif.gz -force -nthreads ${threads} 
             #pigz --fast -b 1280 -f mr_dwi_mask.mif
   sleep 0.1
           
-     dwi2mask mr_dwi_denoised_gibbs_crop_preproc.mif.gz - -nthreads ${threads} -quiet | maskfilter - erode \
+     dwi2mask mr_dwi_denoised_gibbs_preproc.mif.gz - -nthreads ${threads} -quiet | maskfilter - erode \
      -npass 3 -force mr_eroded_mask.mif.gz -quiet -nthreads ${threads}
 sleep 0.1
             #pigz --fast -b 1280 -f mr_eroded_mask.mif
@@ -84,7 +84,7 @@ sleep 0.1
 #%% 6. bias field correction (time: 0.5m)
 #if [ ! -e mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz ]; then
      echo dwibiascorrect
-     time dwibiascorrect mr_dwi_denoised_gibbs_crop_preproc.mif.gz -force mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz -ants \
+     time dwibiascorrect mr_dwi_denoised_gibbs_preproc.mif.gz -force mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz -ants \
      -nthreads ${threads} -mask mr_meanb0_nonbiascorr_bet2_mask.nii.gz 
 sleep 0.1
             #pigz --fast -b 1280 -f mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif
@@ -94,7 +94,7 @@ sleep 0.1
 #fi
 #%% 7. generating b0 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #if [ ! -e mr_meanb0.mif.gz ];then
-     dwiextract mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz - -bzero -quiet -nthreads ${threads} | mrmath - mean \
+     dwiextract mr_dwi_denoised_gibbs_preproc_biasCorr.mif.gz - -bzero -quiet -nthreads ${threads} | mrmath - mean \
      	-force mr_meanb0.mif.gz -axis 3 -quiet -nthreads ${threads} 
 sleep 0.1
      mrconvert mr_meanb0.mif.gz mr_meanb0.nii.gz -force -quiet -nthreads ${threads}
@@ -117,28 +117,28 @@ sleep 0.1
 #    dwi2mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif - -nthreads 256 
 #fi
 #%% 8. upsampling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for im in mr_dwi_denoised_gibbs_crop_preproc_biasCorr mr_meanb0_nonbiascorr_bet2_mask mr_meanb0;
+for im in mr_dwi_denoised_gibbs_preproc_biasCorr mr_meanb0_nonbiascorr_bet2_mask mr_meanb0;
 do 
      	mrresize \${im}.mif.gz -voxel 1.25 -force \${im}_upsample125.mif.gz -interp sinc -nthreads ${threads} -quiet
 sleep 0.1
 done
 #% make sure to use "DILATED MASK" for FOD generation
 #if [ ! -e mr_dilate_mask.mif.gz ];then
-    dwi2mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.mif.gz - -quiet -nthreads ${threads} | maskfilter - dilate \
+    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz - -quiet -nthreads ${threads} | maskfilter - dilate \
     -npass 3 mr_dilate_mask_upsample125.mif.gz -force -quiet -nthreads ${threads} 
             #&& pigz --fast -b 1280 -f mr_dilate_mask_upsample125.mif
 sleep 0.1
     
-    dwi2mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.mif.gz mr_mask_upsample125.mif.gz -nthreads ${threads} -force 
+    dwi2mask mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz mr_mask_upsample125.mif.gz -nthreads ${threads} -force 
             #pigz --fast -b 1280 -f mr_mask_upsample125.mif
 sleep 0.1
     
-    mrconvert mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.mif.gz \
-            mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.nii.gz -force -nthreads ${threads}
+    mrconvert mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.mif.gz \
+            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125.nii.gz -force -nthreads ${threads}
 sleep 0.1
     
-    bet2 mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125 \
-            mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125_bet2 -m -f 0.2 -v
+    bet2 mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125 \
+            mr_dwi_denoised_gibbs_preproc_biasCorr_upsample125_bet2 -m -f 0.2 -v
 sleep 0.1
 #fi
 ##########################################################################################################################################
@@ -200,7 +200,7 @@ done
 # pigz#
 #pigz --best -b 1280 -f -T -p ${threads} *mif
 #pigz --best -b 1280 -f -T -p ${threads} *nii
-cp -rfv /tmp/${s} /ifs/scratch/pimri/posnerlab/1anal/FTO/mrtrix
+cp -rfv /tmp/${s} /ifs/scratch/pimri/posnerlab/1anal/FTO/subjects
 echo "I THINK EVERYTHING IS DONE BY NOW"
 EOC
 
