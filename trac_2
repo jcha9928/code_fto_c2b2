@@ -1,0 +1,67 @@
+#######################################
+#### BEFORE RUNNING THIS "trac_2"....
+
+5. Global intensity normalisation across subjects
+As outlined here, a global intensity normalisation is required for AFD analysis. For single-shell data this can be achieved using the dwiintensitynorm script. The script performs normalisation on all subjects within a study (using a group-wise registration), and therefore the input and output arguments are directories containing all study images. First create directories to store all the input and output images. From the subjects directory:
+
+mkdir -p ../dwiintensitynorm/dwi_input
+mkdir ../dwiintensitynorm/mask_input
+You could copy all files into this directory, however symbolic linking them will save space:
+
+foreach * : ln -sr IN/dwi_denoised_preproc_bias.mif ../dwiintensitynorm/dwi_input/IN.mif
+foreach * : ln -sr IN/dwi_mask.mif ../dwiintensitynorm/mask_input/IN.mif
+Perform intensity normalisation:
+
+dwiintensitynorm ../dwiintensitynorm/dwi_input/ ../dwiintensitynorm/mask_input/ ../dwiintensitynorm/dwi_output/ ../dwiintensitynorm/fa_template.mif ../dwiintensitynorm/fa_template_wm_mask.mif
+Link the output files back to the subject directories:
+
+foreach ../dwiintensitynorm/dwi_output/* : ln -sr IN PRE/dwi_denoised_preproc_bias_norm.mif
+The dwiintensitynorm script also outputs the study-specific FA template and white matter mask. It is recommended that you check that the white matter mask is appropriate (i.e. does not contain CSF or voxels external to the brain. Note it only needs to be a rough WM mask). If you feel the white matter mask needs to be larger or smaller you can re-run dwiintensitynorm with a different -fa_threshold option. Note that if your input brain masks include CSF then this can cause spurious high FA values outside the brain which will may be included in the template white matter mask.
+
+Keeping the FA template image and white matter mask is also handy if additional subjects are added to the study at a later date. New subjects can be intensity normalised in a single step by piping the following commands together. Run from the subjects directory:
+
+
+
+
+
+
+
+##########################################################################################################################################
+##########################################################################################################################################
+#%% 9. dwi2response-subject level %%%%%%%%%%%  (time: 10m)
+#if [ ! -e response_wm.txt ]; then
+    echo dwi2response 
+#    time dwi2response msmt_5tt mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz 5tt_freesurfer2diff.nii.gz \
+#            response_wm.txt response_gm.txt response_csf.txt \
+#            -voxels response_voxels.mif.gz -force -nthreads 256
+#fi
+time dwi2response dhollander mr_dwi_denoised_gibbs_crop_preproc_biasCorr.mif.gz \
+            response_wm.txt response_gm.txt response_csf.txt \
+            -voxels response_voxels.mif.gz -force -nthreads ${threads}
+#%% FOD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+### FOD estimation (time: 3m)
+#if [ ! -e WM_FODs_upsample125.mif.gz ];then 
+   echo dwi2fod
+   time dwi2fod msmt_csd mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.mif.gz \
+            response_wm.txt \
+            WM_FODs_upsample125.mif.gz \
+            response_gm.txt gm.mif.gz \
+             response_csf.txt csf.mif.gz \
+            -mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125_bet2_mask.nii.gz \
+            -force -nthreads ${threads} 
+#fi
+#if [ ! -e tissueRGB.mif.gz ]; then
+   mrconvert WM_FODs_upsample125.mif.gz - -coord 3 0 -nthreads ${threads} -quiet | mrcat csf.mif.gz gm.mif.gz - tissueRGB.mif.gz -axis 3 \
+            -nthreads ${threads} 
+#fi
+### this is crucial to make the FODs comparable across subjects### (time: 1m)
+echo mtnorm
+time mtnormalise WM_FODs_upsample125.mif.gz WM_FODs_upsample125_norm.mif.gz gm.mif.gz gm_norm.mif.gz csf.mif.gz csf_norm.mif.gz \
+        -mask mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125_bet2_mask.nii.gz -nthreads ${threads} 
+    
+mrconvert mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.mif.gz mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.nii.gz \
+            -force -nthreads ${threads}
+            
+mrconvert mr_dilate_mask_upsample125.mif.gz mr_dilate_mask_upsample125.nii.gz -force -nthreads ${threads} 
+dtifit -k mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125.nii.gz -o dtifit \
+    -m mr_dwi_denoised_gibbs_crop_preproc_biasCorr_upsample125_bet2_mask.nii.gz -r dti.bvec -b dti.bval -V
