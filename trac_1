@@ -22,8 +22,8 @@ cat<<EOC >$CMD
 #!/bin/bash
 #$ -cwd -S /bin/bash -j y
 #$ -pe smp 1
-#$ -l mem=9G,time=24::
-#$ -l gpu=1
+#$ -l mem=6G,time=24::
+#$ -l gpu=3
 #$ -M jc4248@c2b2.columbia.edu -m bes
 
 #CUDA
