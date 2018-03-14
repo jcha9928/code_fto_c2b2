@@ -23,7 +23,7 @@ cat<<EOC >$CMD
 #$ -cwd -S /bin/bash -j y
 #$ -pe smp 3
 #$ -l mem=3G,time=6::
-#$ -l gpu=1
+#$ -l gpu=3
 #$ -M jc4248@c2b2.columbia.edu -m bes
 
 #CUDA
