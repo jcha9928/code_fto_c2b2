@@ -21,7 +21,8 @@ echo ${SUBJECT}
 cat<<EOC >$CMD
 #!/bin/bash
 #$ -cwd -S /bin/bash -j y
-#$ -l mem=6G,time=6::
+#$ -pe smp 3
+#$ -l mem=3G,time=6::
 #$ -l gpu=1
 #$ -M jc4248@c2b2.columbia.edu -m bes
 
